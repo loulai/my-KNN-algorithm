@@ -33,6 +33,7 @@ public class Preprocessing {
 		while((currentLine = br.readLine()) != null) {
 			// Remove punctuation
 			currentLine = currentLine.replaceAll("[[0-9]-!~,.():\\\"\\'\\]\\[]+", ""); 
+			
 			String[] currentWords = currentLine.split(" ");
 			
 			// Add each word from each line to the final ArrayList

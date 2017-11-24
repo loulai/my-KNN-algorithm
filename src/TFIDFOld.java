@@ -69,19 +69,6 @@ public class TFIDFOld extends Preprocessing {
 		return tfidf;
 	}	
 	
-	private static ArrayList<String> mergeDocs(ArrayList<ArrayList<String>> corpusList) throws IOException{
-		// Append each word in each doc to grand arrayList
-		ArrayList<String> grandArrayList = new ArrayList<String>();
-		for(int i = 0; i < corpusList.size(); i++) {
-			ArrayList<String> currentArticle = corpusList.get(i);
-			//System.out.printf("words in article %d: %d\n", i, doc.size());
-			for (int k = 0; k < currentArticle.size();k++) {
-				grandArrayList.add(currentArticle.get(k));
-			}
-		}
-		return grandArrayList;
-	}
-	
 	public TFIDFOld(int n) throws IOException {
 		File[][] fileArray = readFiles(); //[a1,a2,a3], [a1,a2]
 		
@@ -162,8 +149,8 @@ public class TFIDFOld extends Preprocessing {
 		return this;
 	}
 	
-	public void printToCSV() throws FileNotFoundException {
-		PrintWriter writer = new PrintWriter("tfidfMatrixLong.csv");
+	public void printToCSV(String fileName) throws FileNotFoundException {
+		PrintWriter writer = new PrintWriter(fileName);
 		
 		//column header
 		for(int i = 0; i < columnsMap.size(); i++) {
@@ -229,18 +216,19 @@ public class TFIDFOld extends Preprocessing {
 	
 	public static void main(String[] args) throws IOException {
 		long startTime = System.nanoTime();
-		int numArticlesToEvaluate = 10;
+		int numArticlesToEvaluate = 12;
 		System.out.printf(">>>>>>>>>>> TFIDF calculation began for %d articles\n" , numArticlesToEvaluate);
 		TFIDFOld myTFIDF = new TFIDFOld(numArticlesToEvaluate); //evaluate n articles
 		myTFIDF.addTFIDF();
 		//myTFIDF.printTFIDF();
-		myTFIDF.printToCSV();
+		myTFIDF.printToCSV("tfidfMatrixTest.csv");
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime); 
 		System.out.println("========= TFIDF complete\n========= Duration (secs): " + (duration/1000000000));
 	}
 }
 
-//  4 articles = 3 sec
-//  16 articles = 64 sec
-//  64 articles = sec
+//  4 articles = 0 sec
+//  16 articles = 0 sec
+//  64 articles = 34 sec
+// 122 articles = 156 sec
