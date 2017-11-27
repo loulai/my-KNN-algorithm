@@ -7,36 +7,55 @@ import java.util.Collections;
 public class MyKNN {
 
 	public static void main(String[] args) throws IOException {
-		File testArticle = new File("./data/C1/article02.txt");
+		
+		// Loading variables
+		/*
+		File inputFile = new File("./data/testData/1/b1.txt");
 		DistanceFunction myCosine = new DistanceCosine();
-		MyKNN kSim = new MyKNN(testArticle, 3, myCosine);
+		int numArticlesToEvaluate = 122;
+
+		// Creating new TFIDF
+		long startTime = System.nanoTime();
+		System.out.printf(">>>>>>>>>>> TFIDF calculation began for %d articles\n" , numArticlesToEvaluate);
+		TFIDF myTFIDF = new TFIDF(numArticlesToEvaluate, inputFile); 
+		myTFIDF.addTFIDF();
+		myTFIDF.printToCSV("tfidfMatrixWithInput.csv");
+		long endTime = System.nanoTime();
+		long duration = (endTime - startTime); 
+		System.out.println("========= TFIDF complete\n========= Duration (secs): " + (duration/1000000000));
+		
+		*/
+		
+		// Generate variables to go in to KNN: input file, TFIDF, distance function and K
+		File inputFile = new File("./data/testData/1/b1.txt");
+		/*
+		TFIDF myTFIDF = new TFIDF(122, inputFile); // Create TFIDF matrix of 122 articles + new input
+		myTFIDF.addTFIDF();
+		myTFIDF.printToCSV("./tfidfMatrixWithInput.csv");
+		*/
+		
+		// Run algorithm
+		MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 3);
 	}
 
 	
-	public MyKNN(File file, int topK, DistanceFunction distf) throws IOException {
-		//String vectorKey = String.valueOf(filenameToInt(file)-1);
-		int n = 3; // Number of articles to evaluate
-		TFIDF myTFIDF = new TFIDF(n); // Create TFIDF matrix of N articles
-		myTFIDF.addTFIDF();
-		myTFIDF.printTFIDF();
+	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {;
+		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixWithInput.csv"));
 		
-		/*
-		
-		ArrayList<Double> vecA = myTFIDF.columnsMap.get(vectorKey);
-		
-		//System.out.println(vecA);
+		// A store for cosine distance values
 		ArrayList<Double> cosineValues = new ArrayList<Double>();
+		Vector vecA = myTFIDF.vectors.get(122); // the last one is the new input
 		
-		for(String key : myTFIDF.columnsMap.keySet()) {
-			ArrayList<Double> vecX = myTFIDF.columnsMap.get(key);
+		// Calculate cosine distance between the input file (vecA) and all other articles
+		for(Vector currentVector : myTFIDF.vectors) {
+			Vector vecX = currentVector;
 			cosineValues.add(distf.calculateDistance(vecA, vecX));
 		}
 		
+		// Sort the generated cosine values
 		ArrayList<Double> sortedCosine = (ArrayList<Double>) cosineValues.clone();
 		Collections.sort(sortedCosine, Collections.reverseOrder());
 		
-		System.out.println("Original cosine vals " + cosineValues);
-		System.out.println("Sorted cosine vals " + sortedCosine);
 		ArrayList<Double> topKCosines = new ArrayList<Double>();
 		int[] topKIndex = new int[topK];
 		
@@ -49,11 +68,7 @@ public class MyKNN {
 			System.out.printf("Index: %d %s\n", topKIndex[i], topKArticles.get(i));
 		}
 		
-		System.out.println(topKCosines); */
-		/*for(int i = 0; i < topK; i++) {
-			System.out.println(intToFilename(topKIndex[i]));
-		}*/
-		
+		System.out.println(topKCosines);
 	}
 	
 	public int filenameToInt(File file) {

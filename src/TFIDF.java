@@ -294,10 +294,9 @@ public class TFIDF extends Preprocessing {
 	public static void main(String[] args) throws IOException {
 		
 		File inputFile = new File("./data/testData/1/b1.txt");
-		readFilesAndAdd(inputFile);
 	
 		long startTime = System.nanoTime();
-		int numArticlesToEvaluate = 4;
+		int numArticlesToEvaluate = 122;
 		System.out.printf(">>>>>>>>>>> TFIDF calculation began for %d articles\n" , numArticlesToEvaluate);
 		TFIDF myTFIDF = new TFIDF(numArticlesToEvaluate, inputFile); //evaluate n articles
 		myTFIDF.addTFIDF();
