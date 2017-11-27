@@ -45,30 +45,35 @@ public class MyKNN {
 		// A store for cosine distance values
 		ArrayList<Double> cosineValues = new ArrayList<Double>();
 		Vector vecA = myTFIDF.vectors.get(122); // the last one is the new input
+		//myTFIDF.vectors.remove(122);
 		
 		// Calculate cosine distance between the input file (vecA) and all other articles
 		for(Vector currentVector : myTFIDF.vectors) {
 			Vector vecX = currentVector;
 			cosineValues.add(distf.calculateDistance(vecA, vecX));
+			System.out.println(vecX);
+			System.out.println(distf.calculateDistance(vecA, vecX));
 		}
 		
 		// Sort the generated cosine values
 		ArrayList<Double> sortedCosine = (ArrayList<Double>) cosineValues.clone();
 		Collections.sort(sortedCosine, Collections.reverseOrder());
 		
+		// 
 		ArrayList<Double> topKCosines = new ArrayList<Double>();
-		int[] topKIndex = new int[topK];
-		
 		topKCosines = new ArrayList<Double>(sortedCosine.subList(1,topK+1));
+		System.out.println(topKCosines);
+		/*
 		ArrayList<String>topKArticles = new ArrayList<String>();
 		
+		int[] topKIndex = new int[topK];
 		for(int i = 0; i < topK; i++) {
 			topKIndex[i] = cosineValues.indexOf(topKCosines.get(i));
 			topKArticles.add(intToFilename(topKIndex[i] + 1));
 			System.out.printf("Index: %d %s\n", topKIndex[i], topKArticles.get(i));
 		}
-		
-		System.out.println(topKCosines);
+		*/
+		//System.out.println(topKCosines);
 	}
 	
 	public int filenameToInt(File file) {
