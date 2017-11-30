@@ -2,6 +2,7 @@
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class Vector {
@@ -9,6 +10,7 @@ public class Vector {
 	ArrayList<Double> values;
 	String articleName;
 	int articleNumber;
+	double distanceFromInputVector;
 	
 	public static void main(String[] args) {
 		/*
@@ -78,4 +80,15 @@ public class Vector {
 	public void addAll(Vector vector) {
 		this.addAll(vector);
 	}
+	
+	public void setDistanceFromInputVector(double dist) {
+		this.distanceFromInputVector = dist;
+	}
+	
+	public void printVectorProperties() {
+		System.out.printf("\n%10s: \n\t%f\n", this.getArticleName(), this.distanceFromInputVector);
+	}
+
+
+
 }

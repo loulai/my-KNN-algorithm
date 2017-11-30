@@ -3,8 +3,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
-public class MyKNN {
+public class MyKNN  {
 
 	public static void main(String[] args) throws IOException {
 		
@@ -43,26 +44,37 @@ public class MyKNN {
 		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixWithInput.csv"));
 		
 		// A store for cosine distance values
-		ArrayList<Double> cosineValues = new ArrayList<Double>();
+		//ArrayList<Double> cosineValues = new ArrayList<Double>();
+		ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
 		Vector vecA = myTFIDF.vectors.get(122); // the last one is the new input
-		//myTFIDF.vectors.remove(122);
+		myTFIDF.vectors.remove(122);
 		
-		// Calculate cosine distance between the input file (vecA) and all other articles
+		// Calculate cosine distance between the input file (vecA) and all other articles 
 		for(Vector currentVector : myTFIDF.vectors) {
-			Vector vecX = currentVector;
-			cosineValues.add(distf.calculateDistance(vecA, vecX));
-			System.out.println(vecX);
-			System.out.println(distf.calculateDistance(vecA, vecX));
+			currentVector.setDistanceFromInputVector(distf.calculateDistance(vecA, currentVector));
+			orderedVectors.add(currentVector);	
+			//currentVector.printVectorProperties();
 		}
 		
 		// Sort the generated cosine values
-		ArrayList<Double> sortedCosine = (ArrayList<Double>) cosineValues.clone();
-		Collections.sort(sortedCosine, Collections.reverseOrder());
+		Collections.sort(orderedVectors, new VectorDistanceComparer());
 		
-		// 
-		ArrayList<Double> topKCosines = new ArrayList<Double>();
-		topKCosines = new ArrayList<Double>(sortedCosine.subList(1,topK+1));
-		System.out.println(topKCosines);
+		ArrayList<Vector> topKCosines = new ArrayList<Vector>();
+		topKCosines = new ArrayList<Vector>(orderedVectors.subList(0,topK+1));
+		
+		for(int i = 0; i < topK; i++) {
+			Vector currentVector = topKCosines.get(i);
+			System.out.printf("%-14s %f\n", currentVector.articleName, currentVector.distanceFromInputVector);
+		}
+		
+		/*8
+		ArrayList<Double> sortedCosine = (ArrayList<Double>) orderedVectors
+		Collections.sort(orderedVectors, Collections.reverseOrder());
+		*/
+		//ArrayList<Double> topKCosines = new ArrayList<Double>();
+		//topKCosines = new ArrayList<Double>(sortedCosine.subList(0,topK+1));
+		//System.out.println(topKCosines);
+		//System.out.println(topKCosines.size());
 		/*
 		ArrayList<String>topKArticles = new ArrayList<String>();
 		

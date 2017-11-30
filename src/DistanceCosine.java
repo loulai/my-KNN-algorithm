@@ -22,7 +22,7 @@ public class DistanceCosine extends DistanceFunction {
 	        normB += Math.pow(vectorB.getValue(i), 2);
 	    }   
 	   
-	    return (1 - dotProduct / (Math.sqrt(normA) * Math.sqrt(normB)));
+	    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 	    
 	}
 	
