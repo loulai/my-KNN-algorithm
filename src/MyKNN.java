@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 public class MyKNN  {
@@ -39,20 +40,33 @@ public class MyKNN  {
 		*/
 		
 		// Run algorithm
-		MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
+		//MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
+	
+		// Validation algorithm
+		myKNNValidation();
 	}
 
-	
-	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {;
+	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {
+		// Import the TFIDF Matrix created in TFIDF.java and vectorize
 		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixWithInput.csv"));
 		ArrayList<Integer> kChapters = new ArrayList<Integer>(topK);
 		
-		// A store for cosine distance values
+		// Create a store for cosine distance values
 		ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
 		Vector vecInput = myTFIDF.vectors.get(122); // the last one is the new input
 		myTFIDF.vectors.remove(122);
 		
 		// Manually set correct topic for input vector, used for evaluation later
+		String inputChapter = inputFile.getName().replaceAll("[0-9][0-9]?.txt", "");
+		if(inputChapter.equals("a")) {
+			vecInput.articleChapter = 14;
+			vecInput.articleTopic = "Predictive Analytics";
+		} else if (inputChapter.equals("b")){
+			vecInput.articleChapter = 15;
+			vecInput.articleTopic = "Irma & Harvey";
+		} else {
+			System.out.println("Cannot accurately count precision / recall");
+		}
 		
 		// Calculate cosine distance between the input file (vecA) and all other articles 
 		for(Vector currentVector : myTFIDF.vectors) {
@@ -108,12 +122,29 @@ public class MyKNN  {
 			System.out.printf("%d) %f  %-14s \n", i+1, currentVector.distanceFromInputVector, currentVector.articleName);
 		}
 		
-		// Print closest chapter
+		// Print chapter the article is classified into
 		System.out.printf("----------------------------\n");
 		hmap.forEach((chapter,count)-> System.out.println("Chapter " + chapter + " occurs " + count + " times."));
-		System.out.println("Belongs to chapter: " + topChapter);
+		System.out.printf("\nPredicted: Chapter %d\n", topChapter);
+		System.out.printf("Actual   : Chapter %d\n", vecInput.articleChapter);
 		System.out.printf("============================\n");
+	}
+	
+	public static void myKNNValidation() {
+		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
 		
+		// Split dataset into 10/90 test/train
+		ArrayList<Vector> testVectors = new ArrayList<Vector>();
+		for (int i = 0; i < 12; i++) {
+			// Generate random number (accounting for size change)
+			Integer r = new Random().nextInt(121 - i); 
+			
+			// Store randomly selected vector
+			testVectors.add(myTFIDF.vectors.get(r));
+			
+			// Remove randomly selected vector from TFIDF
+			myTFIDF.vectors.remove(r);
+		}
 	}
 	
 	public int filenameToInt(File file) {

@@ -293,33 +293,28 @@ public class TFIDF extends Preprocessing {
 	
 	public static void main(String[] args) throws IOException {
 		
-		File inputFile = new File("./data/testData/1/b1.txt");
+		/* Creates a TFIDF after given an input file */
+		// Take new input file
+		String inputFileName = "./data/testData/1/b1.txt";
+		File inputFile = new File(inputFileName);
 	
-		long startTime = System.nanoTime();
+		// Specify number of articles to evaluate
 		int numArticlesToEvaluate = 122;
 		System.out.printf(">>>>>>>>>>> TFIDF calculation began for %d articles\n" , numArticlesToEvaluate);
-		TFIDF myTFIDF = new TFIDF(numArticlesToEvaluate, inputFile); //evaluate n articles
+	
+		// Take an input article and generate TFIDF with the 122 other articles
+		long startTime = System.nanoTime(); // Track algorithm start time
+		TFIDF myTFIDF = new TFIDF(numArticlesToEvaluate, inputFile); // evaluated n articles
 		myTFIDF.addTFIDF();
-		//myTFIDF.printTFIDF();
-		myTFIDF.printToCSV("tfidfMatrixWithInput.csv");
+		
+		// Print output to a new file
+		String outputName = "tfidfMatrixWithInput.csv";
+		myTFIDF.printToCSV(outputName);
+		
+		// Print algorithm duration
 		long endTime = System.nanoTime();
 		long duration = (endTime - startTime); 
 		System.out.println("========= TFIDF complete\n========= Duration (secs): " + (duration/1000000000));
-		
-		/*
-		
-		readFiles();
-		long startTime = System.nanoTime();
-		int numArticlesToEvaluate = 12;
-		System.out.printf(">>>>>>>>>>> TFIDF calculation began for %d articles\n" , numArticlesToEvaluate);
-		TFIDF myTFIDF = new TFIDF(numArticlesToEvaluate); //evaluate n articles
-		myTFIDF.addTFIDF();
-		//myTFIDF.printTFIDF();
-		myTFIDF.printToCSV("tfidfMatrixTest.csv");
-		long endTime = System.nanoTime();
-		long duration = (endTime - startTime); 
-		System.out.println("========= TFIDF complete\n========= Duration (secs): " + (duration/1000000000));
-		*/
 	}
 }
 

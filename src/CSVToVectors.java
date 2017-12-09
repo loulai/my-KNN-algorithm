@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * This class takes the TFIDF CSV file as input and generates a 2D ArrayList as output.
- * The output is then fed into Dataset.java.
+ * The output is then fed into Dataset.java. *not here*
  * @see Dataset.java
  */
 public class CSVToVectors {
@@ -18,7 +18,7 @@ public class CSVToVectors {
 		try {
 			File inputFile = new File("./tfidfMatrixLong.csv");
 			CSVToVectors testReader = new CSVToVectors();
-			ArrayList<Vector> testVectors = testReader.generateVectors(inputFile);
+			ArrayList<Vector> testVectors = testReader.generateVectors(inputFile, 122);
 		} catch (IOException e) { e.printStackTrace();}
 		
 	}
@@ -34,16 +34,13 @@ public class CSVToVectors {
 	/**
 	 * 	Generates vectors as 2D ArrayLists
 	 */
-	public CSVToVectors(File file){
-		try { generateVectors(file); } catch (IOException e) {}
+	public CSVToVectors(File file, int numArticles){
+		try { generateVectors(file, numArticles); } catch (IOException e) {}
 	}
 	
 	
-	public ArrayList<Vector> generateVectors(File file) throws IOException {
+	public ArrayList<Vector> generateVectors(File file, int numArticles) throws IOException {
 		
-		// **temp** 14, in testing should be all 122 articles //3 , 8
-		int numArticles = 123;
-
 		// Input type is a CSV
 		File csvFile = file;
 		
