@@ -9,8 +9,12 @@ public class Vector {
 
 	ArrayList<Double> values;
 	String articleName;
-	int articleNumber;
+	int articleTotalNumber;
+	int articleChapter;
+	String articleTopic;
 	double distanceFromInputVector;
+
+
 	
 	public static void main(String[] args) {
 		/*
@@ -18,6 +22,14 @@ public class Vector {
 		ArrayList<Double> arrList = new ArrayList<>();
 		System.out.println(intToFilename(121));
 		*/
+		int c;
+		c = Integer.parseInt("c15 article54".replaceAll("article[0-9][0-9]?","").replaceAll("[^0-9]", ""));
+		//System.out.println("c15 article54".replaceAll("article[0-9][0-9]?","").replaceAll("[^0-9]", ""));
+		System.out.println(c);
+		String[] topics = new String[]{"Airline Safety", "Amphetamine", "China and Spy Plan and Captives","Hoof and Mouth Disease",
+				"Iran Nuclear", "Korea and Nuclear Capability", "Mortgage Rates", "Ocean and Pollution", "Satanic Cult",
+				"Store Irene", "Volcano", "Saddam Hussein", "Kim Jong-un", "Predictive Analytics", "Irma & Harvey"};
+		System.out.println(topics.length);
 		
 	}
 	
@@ -34,11 +46,11 @@ public class Vector {
 	
 	public Vector(int num, ArrayList<Double> al) {
 		values = al;
-		articleNumber = num;
-		articleName = intToFilename(num);
+		this.setAllNames(num);
+		
 	}
 
-	public static String intToFilename(int num) {
+	public void setAllNames(int num) {
 		int[] aggr = {0, 8, 16, 20, 28, 41, 46, 54, 64, 68, 86, 94 ,104, 111, 116, 122};
 		int c=0;
 		int a=0;
@@ -46,10 +58,35 @@ public class Vector {
 			if(aggr[i] >= num) {
 				c = i;
 				a = num - aggr[i-1];
+				articleTotalNumber = num;
+				articleChapter = c;
+				articleName = String.format("c%d article%d", c,a);
+				articleTopic = this.setTopic();
 				break;
+			} else {
+				articleTotalNumber = 0;
+				articleChapter = 0;
+				articleName = "INPUT FILE";
+				articleTopic = "TOPIC: INPUT FILE";
 			}
 		}
-		return String.format("c%d article%d", c,a);
+	}
+	
+	
+	public String setTopic() {
+		String topic;
+		int c;
+		String[] topics = new String[]{"Airline Safety", "Amphetamine", "China and Spy Plan and Captives","Hoof and Mouth Disease",
+				"Iran Nuclear", "Korea and Nuclear Capability", "Mortgage Rates", "Ocean and Pollution", "Satanic Cult",
+				"Store Irene", "Volcano", "Saddam Hussein", "Kim Jong-un", "Predictive Analytics", "Irma & Harvey"};
+		// Only assigns a topic if it isn't the input article
+		if(articleTotalNumber < 123) {
+			c = Integer.parseInt(articleName.replaceAll("article[0-9][0-9]?","").replaceAll("[^0-9]", ""));
+			topic = topics[c-1];
+		} else {
+			topic = "INPUT ARTICLE";
+		}
+		return topic;
 	}
 
 	public void setValue(int i, Double number) {
@@ -57,8 +94,9 @@ public class Vector {
 	}
 
 	public void setArticleProperties(int i) {
-		articleNumber = i;
-		articleName = intToFilename(i);
+		articleTotalNumber = i;
+		setAllNames(i);
+		//articleName = intToFilename(i);
 	}
 
 	public int getSize() {
