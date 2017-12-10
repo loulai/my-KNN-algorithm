@@ -43,12 +43,12 @@ public class MyKNN  {
 		//MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
 	
 		// Validation algorithm
-		myKNNValidation();
+		myKNNValidation(new DistanceCosine());
 	}
 
 	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {
 		// Import the TFIDF Matrix created in TFIDF.java and vectorize
-		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixWithInput.csv"));
+		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixWithInput.csv"), 123);
 		ArrayList<Integer> kChapters = new ArrayList<Integer>(topK);
 		
 		// Create a store for cosine distance values
@@ -130,7 +130,7 @@ public class MyKNN  {
 		System.out.printf("============================\n");
 	}
 	
-	public static void myKNNValidation() {
+	public static void myKNNValidation(DistanceFunction distf) {
 		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
 		
 		// Split dataset into 10/90 test/train
@@ -145,6 +145,72 @@ public class MyKNN  {
 			// Remove randomly selected vector from TFIDF
 			myTFIDF.vectors.remove(r);
 		}
+		
+		for(int i = 0; i < testVectors.size(); i++) {
+			
+			// Create a store for cosine distance values
+			ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
+			
+			Vector currentVector = testVectors.get(i);
+			
+			// (1) Calculate cosine distance between the test vector and all other articles 
+			for(Vector otherVector : myTFIDF.vectors) {
+				currentVector.setDistanceFromInputVector(distf.calculateDistance(currentVector, otherVector));
+				orderedVectors.add(currentVector);	
+				//currentVector.printVectorProperties();
+			}
+			
+			// (2) Get top K closest vectors
+			int topK = 3;
+			Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
+			ArrayList<Vector> topKCosines = new ArrayList<Vector>(); // Take the top K closest articles
+			topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); // **** 2 is K. Is temp only now *****
+			
+			// (3) Classify
+			ArrayList<Integer> kChapters = new ArrayList<Integer>();
+			for(int m = 0; m < topKCosines.size(); m++) { kChapters.add(topKCosines.get(m).articleChapter);} // Store all chapters occuring in K closest vectors
+			HashMap<Integer, Integer> hmap = new HashMap<Integer, Integer>(); // Initialize HashMap used to keep count of how many times a chapter occurs 
+			HashSet<Integer> uniqueChapters = new HashSet<>(kChapters); // Take only unique chapter names and initialize count to zero
+			for (Integer value : uniqueChapters) {hmap.put(value, 0);}
+			
+			// Count how many times a chapter occurs in K closest vectors
+			for(int m = 0; m < topK; m++) {
+				Integer currentChapter = topKCosines.get(m).articleChapter;
+				hmap.put(currentChapter, hmap.get(currentChapter) + 1);
+			}
+
+			// Take the max chapter occured
+			Integer topChapter = 0;
+			Integer topCount = -1;
+			for (Integer currentChapter : hmap.keySet()){
+				Integer currentCount = hmap.get(currentChapter);
+				if(currentCount > topCount) {
+					topCount = currentCount;
+					topChapter = currentChapter;
+					//System.out.println("*** Chapter : " + topChapter + " Count : " + topCount);
+				} else if (currentCount == topCount){
+					// If it's a tie, do nothing, default to existing top chapter
+					System.out.println("**** TIE! ****");
+				}
+			}
+			
+			// Print K-closest articles
+			System.out.printf("========== My KNN ==========\nThe %d closest articles are:\n", topK);
+			for(int m = 0; m < topK; m++) {
+				Vector currentVec = topKCosines.get(m);
+				System.out.printf("%d) %f  %-14s \n", i+1, currentVec.distanceFromInputVector, currentVec.articleName);
+			}
+			
+			// Print chapter the article is classified into
+			System.out.printf("----------------------------\n");
+			hmap.forEach((chapter,count)-> System.out.println("Chapter " + chapter + " occurs " + count + " times."));
+			System.out.printf("\nPredicted: Chapter %d\n", topChapter);
+			//System.out.printf("Actual   : Chapter %d\n", vecInput.articleChapter);
+			System.out.printf("============================\n");
+		}
+		
+		
+		
 	}
 	
 	public int filenameToInt(File file) {
