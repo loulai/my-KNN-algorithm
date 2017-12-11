@@ -148,6 +148,9 @@ public class MyKNN  {
 		
 		int numCorrect = 0;
 		int numWrong = 0;
+		double avgPrecision = 0.0;
+		int totalTruePositives = 0;
+		int totalFalsePositives = 0;
 		for(int i = 0; i < testVectors.size(); i++) {
 			
 			// Create a store for cosine distance values
@@ -163,7 +166,7 @@ public class MyKNN  {
 			}
 			
 			// (2) Get top K closest vectors
-			int topK = 4;
+			int topK = 1;
 			Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
 			ArrayList<Vector> topKCosines = new ArrayList<Vector>(); // Take the top K closest articles
 			topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); 
@@ -197,30 +200,36 @@ public class MyKNN  {
 				}
 			}
 			
+			/* EVALUATION */
+			System.out.println("========== My KNN ==========");
+			
 			// (4) Calculate F-Score
-		
 			int truePositive = 0;
-			double precision = 0.0;
+			int falsePositive = 0;
 			int correctChapter = currentVector.articleChapter;
+			double precision = 0.0;
 			
 			//  (4.1) Precision
 			for(int m = 0; m < topK; m++) {
 				if(topKCosines.get(m).articleChapter == correctChapter) {
-					truePositive++;
-					precision = truePositive/(topK + 0.0);
-					System.out.printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>. TRUE %.3f\n", precision);
-					
+					truePositive++; // Predicted true and is actually true
 				} else {
-					precision = truePositive/(topK + 0.0);
-					System.out.printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>. Nup  %.3f\n", precision);
+					falsePositive++; // Predicted true but is actually false
 				}
+				precision = truePositive/(topK + 0.0);
 			}
+			totalTruePositives += truePositive;
+			totalFalsePositives += falsePositive;
+			avgPrecision += precision/12;
+			System.out.printf("> cumulative tp : %d\n", totalTruePositives);
+			System.out.printf("> cumulative fp : %d\n", totalFalsePositives);
+			System.out.printf("> precision     : %.3f\n", precision);
+			System.out.printf("> avg precision : %.5f\n", avgPrecision);
 			
 			// (4.2) Recall
 			
-			
 			// Print K-closest articles
-			System.out.printf("========== My KNN ==========\nThe %d closest articles are:\n", topK);
+			System.out.printf("The %d closest articles are:\n", topK);
 			for(int m = 0; m < topK; m++) {
 				Vector currentVec = topKCosines.get(m);
 				System.out.printf("%d) %f  %-14s \n", i+1, currentVec.distanceFromInputVector, currentVec.articleName);
@@ -233,13 +242,17 @@ public class MyKNN  {
 			System.out.printf("----------------------------\n");
 			if(topChapter == currentVector.articleChapter) {
 				numCorrect++;
-				System.out.println(" ==== CORRECT !!!!!!!!!!!!!! ==== <<<<<<<<<<<< " + numCorrect);
+				System.out.printf("> CORRECT (%d)\n", numCorrect);
 			} else {
 				numWrong++;
-				System.out.println(" ==== WRONG ==== " + numWrong);
+				System.out.printf("> Wrong (%d)\n", numWrong);
 			}
 		}
-		System.out.printf("Correct/Wrong: %d/%d\n", numCorrect, numWrong);
+		
+		// Print final evaluation for K
+		System.out.printf(" - Correct Predictions : %d\n", numCorrect);
+		System.out.printf(" - Wrong Predictions: %d\n", numWrong);
+		System.out.printf(" - Precision: %f", numCorrect/(numWrong + numCorrect + 0.0));
 	}
 	
 	public int filenameToInt(File file) {
