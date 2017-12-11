@@ -43,7 +43,8 @@ public class MyKNN  {
 		//MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
 	
 		// Validation algorithm
-		myKNNValidation(new DistanceCosine());
+		int bestK = myKNNValidation(new DistanceCosine());
+		System.out.println(">>> BEST K " + bestK);
 	}
 
 	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {
@@ -130,9 +131,9 @@ public class MyKNN  {
 		System.out.printf("============================\n");
 	}
 	
-	public static void myKNNValidation(DistanceFunction distf) {
+	public static int myKNNValidation(DistanceFunction distf) {
 		ArrayList<ArrayList<Double>> resultsMatrix = new ArrayList<ArrayList<Double>>();
-		int kRange = 2;
+		int kRange = 10;
 		double avgPrecision = 0.0;
 		ArrayList<Double> allPrecisions = new ArrayList<Double>();
  		
@@ -213,9 +214,9 @@ public class MyKNN  {
 					}
 					
 					/* EVALUATION */
-					System.out.printf("\n[K = %d] --------------\n", topK);
+					//System.out.printf("\n[K = %d] --------------\n", topK);
 					// Print K-closest articles
-					System.out.println("Vector    : " + currentVector.articleName);
+					//System.out.println("Vector    : " + currentVector.articleName);
 					//System.out.printf("Closest articles:\n", topK);
 					for(int m = 0; m < topK; m++) {
 						Vector currentVec = topKCosines.get(m);
@@ -224,14 +225,14 @@ public class MyKNN  {
 					
 					// Print chapter the article is classified into
 					//hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
-					System.out.printf("Predicted : Chapter %d\n", topChapter);
-					System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
+					//System.out.printf("Predicted : Chapter %d\n", topChapter);
+					//System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
 					if(topChapter == currentVector.articleChapter) {
 						numCorrect++;
-						System.out.print(" > CORRECT\n");
+						//System.out.print(" > CORRECT\n");
 					} else {
 						numWrong++;
-						System.out.println();
+						//System.out.println();
 					}
 				}
 				
@@ -256,7 +257,7 @@ public class MyKNN  {
 		
 		// Print results
 		System.out.print("      ");
-		System.out.print("AVG   ");
+		System.out.print("  AVG    ");
 		for(int l = 0; l < 10; l++) {
 			System.out.printf("f%-5d", l+1);
 		}
@@ -264,13 +265,18 @@ public class MyKNN  {
 		
 		for(int m = 0; m < resultsMatrix.size(); m++) {
 			System.out.printf("k%-5d", m+1); 
-			System.out.printf("%.3f ", allPrecisions.get(m));
+			System.out.printf("|% .3f |", allPrecisions.get(m));
 			for(int j = 0; j < resultsMatrix.get(m).size(); j++) {
 				System.out.printf("%.3f ", resultsMatrix.get(m).get(j));
 			}
 			System.out.println();
 		}
-		
+	
+		// (6) Calculate which K gives the highest precision
+		double bestKPrecision = Collections.max(allPrecisions);
+		int bestK = allPrecisions.indexOf(bestKPrecision) + 1;
+		System.out.printf("> Best K   : %d\n> Precision: %.3f\n", bestK, bestKPrecision);
+		return bestK;
 	}
 	
 	public int filenameToInt(File file) {
