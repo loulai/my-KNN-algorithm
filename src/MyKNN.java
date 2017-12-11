@@ -132,45 +132,56 @@ public class MyKNN  {
 	
 	public static void myKNNValidation(DistanceFunction distf) {
 		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
-		
-		// Split dataset into 10/90 test/train
-		ArrayList<Vector> testVectors = new ArrayList<Vector>();
-		for (int i = 0; i < 12; i++) {
-			// Generate random number (accounting for size change)
-			Integer r = new Random().nextInt(121 - i); 
-			
-			// Store randomly selected vector
-			testVectors.add(myTFIDF.vectors.get(r));
-			
-			// Remove randomly selected vector from TFIDF
-			myTFIDF.vectors.remove(r);
-		}
-		
-		int numCorrect = 0;
-		int numWrong = 0;
+		int folds = 10;
 		double avgPrecision = 0.0;
-		int totalTruePositives = 0;
-		int totalFalsePositives = 0;
-		for(int i = 0; i < testVectors.size(); i++) {
+		ArrayList<Vector> previousTestVectors = new ArrayList<Vector>();
+		
+		// Begin 10-fold cross-validation
+		for(int z = 0; z < folds; z++) {
 			
-			// Create a store for cosine distance values
-			ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
+			// Split dataset into 10/90 test/train
+			ArrayList<Vector> testVectors = new ArrayList<Vector>();
 			
-			Vector currentVector = testVectors.get(i);
-			
-			// (1) Calculate cosine distance between the test vector and all other articles 
-			for(Vector otherVector : myTFIDF.vectors) {
-				currentVector.setDistanceFromInputVector(distf.calculateDistance(currentVector, otherVector));
-				orderedVectors.add(otherVector);	
-				//currentVector.printVectorProperties();
+			for (int i = 0; i < 12; i++) {
+				// Generate random number (accounting for size change)
+				Integer r = new Random().nextInt(121 - i); 
+				
+				// Store randomly selected vector
+				testVectors.add(myTFIDF.vectors.get(r));
+				
+				// Remove randomly selected vector from TFIDF
+				myTFIDF.vectors.remove(r);
 			}
 			
+			// Add back the previous test vectors (if not the first iteration)
+			if(z != 0) {
+				myTFIDF.vectors.addAll(previousTestVectors);
+			}
+			
+			// (1) Calculate cosine distance between the test vector and all other articles
+			int numCorrect = 0;
+			int numWrong = 0;
+			for(int i = 0; i < testVectors.size(); i++) {
+				// Create a store for cosine distance values
+				ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
+				Vector currentVector = testVectors.get(i);
+				 
+				for(Vector otherVector : myTFIDF.vectors) {
+					currentVector.setDistanceFromInputVector(distf.calculateDistance(currentVector, otherVector));
+					orderedVectors.add(otherVector);	
+					//currentVector.printVectorProperties();
+				}
+				
+		}
+	
+		
+		
+		
 			// (2) Get top K closest vectors
 			int topK = 1;
 			Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
 			ArrayList<Vector> topKCosines = new ArrayList<Vector>(); // Take the top K closest articles
 			topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); 
-
 
 			// (3) Classify
 			ArrayList<Integer> kChapters = new ArrayList<Integer>();
@@ -179,13 +190,13 @@ public class MyKNN  {
 			HashSet<Integer> uniqueChapters = new HashSet<>(kChapters); // Take only unique chapter names and initialize count to zero
 			for (Integer value : uniqueChapters) {hmap.put(value, 0);}
 			
-			// Count how many times a chapter occurs in K closest vectors
+			//  (3.1) Count how many times a chapter occurs in K closest vectors
 			for(int m = 0; m < topK; m++) {
 				Integer currentChapter = topKCosines.get(m).articleChapter;
 				hmap.put(currentChapter, hmap.get(currentChapter) + 1);
 			}
 
-			// Take the max chapter occured
+			//  (3.2) Take most frequent chapter occured
 			Integer topChapter = 0;
 			Integer topCount = -1;
 			for (Integer currentChapter : hmap.keySet()){
@@ -194,65 +205,39 @@ public class MyKNN  {
 					topCount = currentCount;
 					topChapter = currentChapter;
 					//System.out.println("*** Chapter : " + topChapter + " Count : " + topCount);
-				} else if (currentCount == topCount){
-					// If it's a tie, do nothing, default to existing top chapter
-					// System.out.println("TIE! >> ");
-				}
+				} else if (currentCount == topCount){} // If it's a tie, do nothing, default to existing top chapter
 			}
 			
 			/* EVALUATION */
-			System.out.println("========== My KNN ==========");
-			
-			// (4) Calculate F-Score
-			int truePositive = 0;
-			int falsePositive = 0;
-			int correctChapter = currentVector.articleChapter;
-			double precision = 0.0;
-			
-			//  (4.1) Precision
-			for(int m = 0; m < topK; m++) {
-				if(topKCosines.get(m).articleChapter == correctChapter) {
-					truePositive++; // Predicted true and is actually true
-				} else {
-					falsePositive++; // Predicted true but is actually false
-				}
-				precision = truePositive/(topK + 0.0);
-			}
-			totalTruePositives += truePositive;
-			totalFalsePositives += falsePositive;
-			avgPrecision += precision/12;
-			System.out.printf("> cumulative tp : %d\n", totalTruePositives);
-			System.out.printf("> cumulative fp : %d\n", totalFalsePositives);
-			System.out.printf("> precision     : %.3f\n", precision);
-			System.out.printf("> avg precision : %.5f\n", avgPrecision);
-			
-			// (4.2) Recall
-			
+			System.out.printf("\n[K = %d] --------------\n", topK);
 			// Print K-closest articles
-			System.out.printf("The %d closest articles are:\n", topK);
+			System.out.printf("Closest articles:\n", topK);
 			for(int m = 0; m < topK; m++) {
 				Vector currentVec = topKCosines.get(m);
-				System.out.printf("%d) %f  %-14s \n", i+1, currentVec.distanceFromInputVector, currentVec.articleName);
+				System.out.printf("%d) %f  %-14s \n", m+1, currentVec.distanceFromInputVector, currentVec.articleName);
 			}
 			
 			// Print chapter the article is classified into
-			hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
+			//hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
 			System.out.printf("Predicted: Chapter %d\n", topChapter);
-			System.out.printf("Actual   : Chapter %d\n", currentVector.articleChapter);
-			System.out.printf("----------------------------\n");
+			System.out.printf("Actual   : Chapter %d", currentVector.articleChapter);
 			if(topChapter == currentVector.articleChapter) {
 				numCorrect++;
-				System.out.printf("> CORRECT (%d)\n", numCorrect);
+				System.out.print(" > CORRECT\n");
 			} else {
 				numWrong++;
-				System.out.printf("> Wrong (%d)\n", numWrong);
+				System.out.println();
 			}
 		}
 		
-		// Print final evaluation for K
-		System.out.printf(" - Correct Predictions : %d\n", numCorrect);
-		System.out.printf(" - Wrong Predictions: %d\n", numWrong);
-		System.out.printf(" - Precision: %f", numCorrect/(numWrong + numCorrect + 0.0));
+		// (4) Calculate precision
+		double precision = numCorrect/(testVectors.size() + 0.0);
+		System.out.printf("\n - Correct Predictions    : %d\n", numCorrect);
+		System.out.printf(" - Total Predictions made : %d\n", testVectors.size());
+		System.out.printf(" - Precision: %.3f", precision);
+		
+		// (5) Reset test vectors for next fold
+		previousTestVectors.addAll(testVectors);
 	}
 	
 	public int filenameToInt(File file) {
