@@ -43,8 +43,8 @@ public class MyKNN  {
 		//MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
 	
 		// Validation algorithm
-		int bestK = myKNNValidation(new DistanceCosine());
-		System.out.println(">>> BEST K " + bestK);
+		int bestK = myKNNValidation(new DistanceCosine(), 10); // tries k = 1 to k = 10
+		System.out.println(">>> BEST K : " + bestK);
 	}
 
 	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {
@@ -131,9 +131,8 @@ public class MyKNN  {
 		System.out.printf("============================\n");
 	}
 	
-	public static int myKNNValidation(DistanceFunction distf) {
+	public static int myKNNValidation(DistanceFunction distf, int kRange) {
 		ArrayList<ArrayList<Double>> resultsMatrix = new ArrayList<ArrayList<Double>>();
-		int kRange = 10;
 		double avgPrecision = 0.0;
 		ArrayList<Double> allPrecisions = new ArrayList<Double>();
  		
