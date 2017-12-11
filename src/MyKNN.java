@@ -131,118 +131,146 @@ public class MyKNN  {
 	}
 	
 	public static void myKNNValidation(DistanceFunction distf) {
-		CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
-		int folds = 2;
+		ArrayList<ArrayList<Double>> resultsMatrix = new ArrayList<ArrayList<Double>>();
+		int kRange = 2;
 		double avgPrecision = 0.0;
-		ArrayList<Vector> previousTestVectors = new ArrayList<Vector>();
-		
-		// Begin 10-fold cross-validation
-		for(int z = 0; z < folds; z++) {
+		ArrayList<Double> allPrecisions = new ArrayList<Double>();
+ 		
+		// Test for a range of Ks
+		for(int r = 0; r < kRange; r++) {
+			CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
+			int folds = 10;
+			ArrayList<Vector> previousTestVectors = new ArrayList<Vector>();
+			ArrayList<Double> foldResults = new ArrayList<Double>();
 			
-			// Split dataset into 10/90 test/train
-			ArrayList<Vector> testVectors = new ArrayList<Vector>();
-			
-			for (int i = 0; i < 12; i++) {
-				// Generate random number (accounting for size change)
-				Integer r = new Random().nextInt(myTFIDF.vectors.size() - i); 
+			// Begin 10-fold cross-validation
+			for(int z = 0; z < folds; z++) {
 				
-				// Store randomly selected vector
-				testVectors.add(myTFIDF.vectors.get(r));
+				// Split dataset into 10/90 test/train
+				ArrayList<Vector> testVectors = new ArrayList<Vector>();
 				
-				// Remove randomly selected vector from TFIDF
-				myTFIDF.vectors.remove((int)r);
-			}
-			
-			// Add back the previous test vectors (if not the first iteration)
-			if(z != 0) {
-				myTFIDF.vectors.addAll(previousTestVectors);
-			}
-			
-			// (1) Calculate cosine distance between the test vector and all other articles
-			int numCorrect = 0;
-			int numWrong = 0;
-			for(int i = 0; i < testVectors.size(); i++) {
-				
-				// Get current vector
-				Vector currentVector = testVectors.get(i);
-				ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
-				 
-				for(Vector otherVector : myTFIDF.vectors) {
-					// Calculate distance between input vector and all other vectors
-					otherVector.setDistanceFromInputVector(distf.calculateDistance(currentVector, otherVector));
-					// Add to 'orderedVectors', which is sorted later
-					orderedVectors.add(otherVector);	
+				for (int i = 0; i < 12; i++) {
+					// Generate random number (accounting for size change)
+					Integer rand = new Random().nextInt(myTFIDF.vectors.size() - i); 
+					
+					// Store randomly selected vector
+					testVectors.add(myTFIDF.vectors.get(rand));
+					
+					// Remove randomly selected vector from TFIDF
+					myTFIDF.vectors.remove((int)rand);
 				}
 				
-				// (2) Get top K closest vectors
-				int topK = 4;
-				Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
-				ArrayList<Vector> topKCosines = new ArrayList<Vector>(); 
-				topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); 
-				
-				// (3) Classify
-				ArrayList<Integer> kChapters = new ArrayList<Integer>();
-				for(int m = 0; m < topKCosines.size(); m++) { kChapters.add(topKCosines.get(m).articleChapter);} // Store all chapters occuring in K closest vectors
-				HashMap<Integer, Integer> hmap = new HashMap<Integer, Integer>(); // Initialize HashMap used to keep count of how many times a chapter occurs 
-				HashSet<Integer> uniqueChapters = new HashSet<>(kChapters); // Take only unique chapter names and initialize count to zero
-				for (Integer value : uniqueChapters) {hmap.put(value, 0);}
-				
-				//  (3.1) Count how many times a chapter occurs in K closest vectors
-				for(int m = 0; m < topK; m++) {
-					Integer currentChapter = topKCosines.get(m).articleChapter;
-					hmap.put(currentChapter, hmap.get(currentChapter) + 1);
+				// Add back the previous test vectors (if not the first iteration)
+				if(z != 0) {
+					myTFIDF.vectors.addAll(previousTestVectors);
 				}
+				
+				// (1) Calculate cosine distance between the test vector and all other articles
+				int numCorrect = 0;
+				int numWrong = 0;
+				for(int i = 0; i < testVectors.size(); i++) {
+					
+					// Get current vector
+					Vector currentVector = testVectors.get(i);
+					ArrayList<Vector> orderedVectors = new ArrayList<Vector>();
+					 
+					for(Vector otherVector : myTFIDF.vectors) {
+						// Calculate distance between input vector and all other vectors
+						otherVector.setDistanceFromInputVector(distf.calculateDistance(currentVector, otherVector));
+						// Add to 'orderedVectors', which is sorted later
+						orderedVectors.add(otherVector);	
+					}
+					
+					// (2) Get top K closest vectors
+					int topK = kRange;
+					Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
+					ArrayList<Vector> topKCosines = new ArrayList<Vector>(); 
+					topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); 
+					
+					// (3) Classify
+					ArrayList<Integer> kChapters = new ArrayList<Integer>();
+					for(int m = 0; m < topKCosines.size(); m++) { kChapters.add(topKCosines.get(m).articleChapter);} // Store all chapters occuring in K closest vectors
+					HashMap<Integer, Integer> hmap = new HashMap<Integer, Integer>(); // Initialize HashMap used to keep count of how many times a chapter occurs 
+					HashSet<Integer> uniqueChapters = new HashSet<>(kChapters); // Take only unique chapter names and initialize count to zero
+					for (Integer value : uniqueChapters) {hmap.put(value, 0);}
+					
+					//  (3.1) Count how many times a chapter occurs in K closest vectors
+					for(int m = 0; m < topK; m++) {
+						Integer currentChapter = topKCosines.get(m).articleChapter;
+						hmap.put(currentChapter, hmap.get(currentChapter) + 1);
+					}
 
-				//  (3.2) Take most frequent chapter occured
-				Integer topChapter = 0;
-				Integer topCount = -1;
-				for (Integer currentChapter : hmap.keySet()){
-					Integer currentCount = hmap.get(currentChapter);
-					if(currentCount > topCount) {
-						topCount = currentCount;
-						topChapter = currentChapter;
-						//System.out.println("*** Chapter : " + topChapter + " Count : " + topCount);
-					} else if (currentCount == topCount){} // If it's a tie, do nothing, default to existing top chapter
+					//  (3.2) Take most frequent chapter occured
+					Integer topChapter = 0;
+					Integer topCount = -1;
+					for (Integer currentChapter : hmap.keySet()){
+						Integer currentCount = hmap.get(currentChapter);
+						if(currentCount > topCount) {
+							topCount = currentCount;
+							topChapter = currentChapter;
+							//System.out.println("*** Chapter : " + topChapter + " Count : " + topCount);
+						} else if (currentCount == topCount){} // If it's a tie, do nothing, default to existing top chapter
+					}
+					
+					/* EVALUATION */
+					System.out.printf("\n[K = %d] --------------\n", topK);
+					// Print K-closest articles
+					System.out.println("Vector    : " + currentVector.articleName);
+					//System.out.printf("Closest articles:\n", topK);
+					for(int m = 0; m < topK; m++) {
+						Vector currentVec = topKCosines.get(m);
+						//System.out.printf("\t%d) %f  %-14s \n", m+1, currentVec.distanceFromInputVector, currentVec.articleName);
+					}
+					
+					// Print chapter the article is classified into
+					//hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
+					System.out.printf("Predicted : Chapter %d\n", topChapter);
+					System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
+					if(topChapter == currentVector.articleChapter) {
+						numCorrect++;
+						System.out.print(" > CORRECT\n");
+					} else {
+						numWrong++;
+						System.out.println();
+					}
 				}
 				
-				/* EVALUATION */
-				System.out.printf("\n[K = %d] --------------\n", topK);
-				// Print K-closest articles
-				System.out.println("Vector    : " + currentVector.articleName);
-				//System.out.printf("Closest articles:\n", topK);
-				for(int m = 0; m < topK; m++) {
-					Vector currentVec = topKCosines.get(m);
-					//System.out.printf("\t%d) %f  %-14s \n", m+1, currentVec.distanceFromInputVector, currentVec.articleName);
-				}
+				// (4) Calculate precision
+				double precision = numCorrect/(testVectors.size() + 0.0);
+				foldResults.add(precision);
+				avgPrecision += precision/folds;
+				System.out.printf("\n=============== [fold %d] \n", z+1);
+				System.out.printf(" - Correct Predictions    : %d\n", numCorrect);
+				System.out.printf(" - Total Predictions made : %d\n", testVectors.size());
+				System.out.printf(" - Precision    : %.3f\n===============\n", precision);
 				
-				// Print chapter the article is classified into
-				//hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
-				System.out.printf("Predicted : Chapter %d\n", topChapter);
-				System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
-				if(topChapter == currentVector.articleChapter) {
-					numCorrect++;
-					System.out.print(" > CORRECT\n");
-				} else {
-					numWrong++;
-					System.out.println();
-				}
+				// (5) Reset test vectors for next fold
+				previousTestVectors.clear();
+				previousTestVectors.addAll(testVectors);
 			}
-			
-			// (4) Calculate precision
-			double precision = numCorrect/(testVectors.size() + 0.0);
-			avgPrecision += precision/folds;
-			System.out.printf("\n=============== [fold %d] \n", z+1);
-			System.out.printf(" - Correct Predictions    : %d\n", numCorrect);
-			System.out.printf(" - Total Predictions made : %d\n", testVectors.size());
-			System.out.printf(" - Precision    : %.3f\n===============\n", precision);
 			System.out.printf(" - Avg precision: %.3f\n===============\n", avgPrecision);
-			
-			// (5) Reset test vectors for next fold
-			previousTestVectors.clear();
-			previousTestVectors.addAll(testVectors);
+			resultsMatrix.add(foldResults);
+			allPrecisions.add(avgPrecision);
+			avgPrecision = 0.0; // Reset
 		}
-
-	
+		
+		// Print results
+		System.out.print("      ");
+		System.out.print("AVG   ");
+		for(int l = 0; l < 10; l++) {
+			System.out.printf("f%-5d", l+1);
+		}
+		System.out.println();
+		
+		for(int m = 0; m < resultsMatrix.size(); m++) {
+			System.out.printf("k%-5d", m+1); 
+			System.out.printf("%.3f ", allPrecisions.get(m));
+			for(int j = 0; j < resultsMatrix.get(m).size(); j++) {
+				System.out.printf("%.3f ", resultsMatrix.get(m).get(j));
+			}
+			System.out.println();
+		}
+		
 	}
 	
 	public int filenameToInt(File file) {
