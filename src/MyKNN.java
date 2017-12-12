@@ -32,7 +32,7 @@ public class MyKNN  {
 		*/
 		
 		// Generate variables to go in to KNN: input file, TFIDF, distance function and K
-		File inputFile = new File("./data/testData/1/b1.txt");
+		File inputFile = new File("./data/testData/2/a1.txt");
 		/*
 		TFIDF myTFIDF = new TFIDF(122, inputFile); // Create TFIDF matrix of 122 articles + new input
 		myTFIDF.addTFIDF();
@@ -40,11 +40,11 @@ public class MyKNN  {
 		*/
 		
 		// Run algorithm
-		//MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
+		MyKNN myKNN = new MyKNN(inputFile, new DistanceCosine(), 4);
 	
 		// Validation algorithm
-		int bestK = myKNNValidation(new DistanceCosine(), 10); // tries k = 1 to k = 10
-		System.out.println(">>> BEST K : " + bestK);
+		//int bestK = myKNNValidation(new DistanceCosine(), 20); // tries k = 1 to k = 10
+		//System.out.println(">>> BEST K : " + bestK);
 	}
 
 	public MyKNN(File inputFile, DistanceFunction distf, int topK) throws IOException {
@@ -57,7 +57,7 @@ public class MyKNN  {
 		Vector vecInput = myTFIDF.vectors.get(122); // the last one is the new input
 		myTFIDF.vectors.remove(122);
 		
-		// Manually set correct topic for input vector, used for evaluation later
+		// Manually set correct topic for input vector which is used for evaluation later
 		String inputChapter = inputFile.getName().replaceAll("[0-9][0-9]?.txt", "");
 		if(inputChapter.equals("a")) {
 			vecInput.articleChapter = 14;
@@ -117,16 +117,17 @@ public class MyKNN  {
 		}
 		
 		// Print K-closest articles
-		System.out.printf("========== My KNN ==========\nThe %d closest articles are:\n", topK);
+		System.out.printf("========== My KNN ==========\nTest article topic: \n\t%s\n", vecInput.articleTopic);
+		System.out.printf("The %d closest articles are:\n", topK);
 		for(int i = 0; i < topK; i++) {
 			Vector currentVector = topKCosines.get(i);
-			System.out.printf("%d) %f  %-14s \n", i+1, currentVector.distanceFromInputVector, currentVector.articleName);
+			System.out.printf("\t%d) %f  %-14s %s\n", i+1, currentVector.distanceFromInputVector, currentVector.articleName, currentVector.articleTopic);
 		}
 		
 		// Print chapter the article is classified into
-		System.out.printf("----------------------------\n");
 		hmap.forEach((chapter,count)-> System.out.println("Chapter " + chapter + " occurs " + count + " times."));
-		System.out.printf("\nPredicted: Chapter %d\n", topChapter);
+		System.out.printf("----------------------------\n");
+		System.out.printf("Predicted: Chapter %d\n", topChapter);
 		System.out.printf("Actual   : Chapter %d\n", vecInput.articleChapter);
 		System.out.printf("============================\n");
 	}
@@ -137,13 +138,13 @@ public class MyKNN  {
 		ArrayList<Double> allPrecisions = new ArrayList<Double>();
  		
 		// Test for a range of Ks
-		for(int r = 0; r < kRange; r++) {
+		for(int k = 1; k < kRange + 1; k++) {
 			CSVToVectors myTFIDF = new CSVToVectors(new File("./tfidfMatrixLong.csv"), 122);
 			int folds = 10;
 			ArrayList<Vector> previousTestVectors = new ArrayList<Vector>();
 			ArrayList<Double> foldResults = new ArrayList<Double>();
 			
-			// Begin 10-fold cross-validation
+			// (1) Begin 10-fold cross-validation
 			for(int z = 0; z < folds; z++) {
 				
 				// Split dataset into 10/90 test/train
@@ -165,7 +166,7 @@ public class MyKNN  {
 					myTFIDF.vectors.addAll(previousTestVectors);
 				}
 				
-				// (1) Calculate cosine distance between the test vector and all other articles
+				// (3) Calculate cosine distance between the test vector and all other articles
 				int numCorrect = 0;
 				int numWrong = 0;
 				for(int i = 0; i < testVectors.size(); i++) {
@@ -181,26 +182,26 @@ public class MyKNN  {
 						orderedVectors.add(otherVector);	
 					}
 					
-					// (2) Get top K closest vectors
-					int topK = kRange;
+					// (4) Get top K closest vectors
+					int topK = k;
 					Collections.sort(orderedVectors, new VectorDistanceComparer()); // sort
 					ArrayList<Vector> topKCosines = new ArrayList<Vector>(); 
 					topKCosines = new ArrayList<Vector>(orderedVectors.subList(0, topK)); 
 					
-					// (3) Classify
+					// (5) Classify vector according to most common chapter
 					ArrayList<Integer> kChapters = new ArrayList<Integer>();
 					for(int m = 0; m < topKCosines.size(); m++) { kChapters.add(topKCosines.get(m).articleChapter);} // Store all chapters occuring in K closest vectors
 					HashMap<Integer, Integer> hmap = new HashMap<Integer, Integer>(); // Initialize HashMap used to keep count of how many times a chapter occurs 
 					HashSet<Integer> uniqueChapters = new HashSet<>(kChapters); // Take only unique chapter names and initialize count to zero
 					for (Integer value : uniqueChapters) {hmap.put(value, 0);}
 					
-					//  (3.1) Count how many times a chapter occurs in K closest vectors
+					//  (5.1) Count how many times a chapter occurs in K closest vectors
 					for(int m = 0; m < topK; m++) {
 						Integer currentChapter = topKCosines.get(m).articleChapter;
 						hmap.put(currentChapter, hmap.get(currentChapter) + 1);
 					}
 
-					//  (3.2) Take most frequent chapter occured
+					//  (5.2) Take most frequent chapter occured
 					Integer topChapter = 0;
 					Integer topCount = -1;
 					for (Integer currentChapter : hmap.keySet()){
@@ -212,30 +213,30 @@ public class MyKNN  {
 						} else if (currentCount == topCount){} // If it's a tie, do nothing, default to existing top chapter
 					}
 					
-					/* EVALUATION */
-					//System.out.printf("\n[K = %d] --------------\n", topK);
+					// (6) Print this fold's results
 					// Print K-closest articles
-					//System.out.println("Vector    : " + currentVector.articleName);
-					//System.out.printf("Closest articles:\n", topK);
+					System.out.printf("\n[K = %d] --------------\n", topK);
+					System.out.println("Vector    : " + currentVector.articleName);
+					System.out.printf("Closest articles:\n", topK);
 					for(int m = 0; m < topK; m++) {
 						Vector currentVec = topKCosines.get(m);
-						//System.out.printf("\t%d) %f  %-14s \n", m+1, currentVec.distanceFromInputVector, currentVec.articleName);
+						System.out.printf("\t%d) %f  %-14s \n", m+1, currentVec.distanceFromInputVector, currentVec.articleName);
 					}
 					
 					// Print chapter the article is classified into
-					//hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
-					//System.out.printf("Predicted : Chapter %d\n", topChapter);
-					//System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
+					hmap.forEach((chapter,count)-> System.out.println("Ch " + chapter + " x " + count + " times" ));
+					System.out.printf("Predicted : Chapter %d\n", topChapter);
+					System.out.printf("Actual    : Chapter %d", currentVector.articleChapter);
 					if(topChapter == currentVector.articleChapter) {
 						numCorrect++;
-						//System.out.print(" > CORRECT\n");
+						System.out.print(" > CORRECT\n");
 					} else {
 						numWrong++;
-						//System.out.println();
+						System.out.println();
 					}
 				}
 				
-				// (4) Calculate precision
+				// (7) Calculate overall precision this fold
 				double precision = numCorrect/(testVectors.size() + 0.0);
 				foldResults.add(precision);
 				avgPrecision += precision/folds;
@@ -244,7 +245,7 @@ public class MyKNN  {
 				System.out.printf(" - Total Predictions made : %d\n", testVectors.size());
 				System.out.printf(" - Precision    : %.3f\n===============\n", precision);
 				
-				// (5) Reset test vectors for next fold
+				// Reset test vectors for next fold
 				previousTestVectors.clear();
 				previousTestVectors.addAll(testVectors);
 			}
@@ -254,7 +255,7 @@ public class MyKNN  {
 			avgPrecision = 0.0; // Reset
 		}
 		
-		// Print results
+		// (8) Print precision matrix
 		System.out.print("      ");
 		System.out.print("  AVG    ");
 		for(int l = 0; l < 10; l++) {
@@ -271,10 +272,10 @@ public class MyKNN  {
 			System.out.println();
 		}
 	
-		// (6) Calculate which K gives the highest precision
+		// (9) Calculate which K gives the highest precision
 		double bestKPrecision = Collections.max(allPrecisions);
 		int bestK = allPrecisions.indexOf(bestKPrecision) + 1;
-		System.out.printf("> Best K   : %d\n> Precision: %.3f\n", bestK, bestKPrecision);
+		System.out.printf("\n> Best K   : %d\n> Precision: %.3f\n", bestK, bestKPrecision);
 		return bestK;
 	}
 	
